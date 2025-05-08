@@ -1,0 +1,23 @@
+﻿@startuml
+!include ./includes/C4_Container.puml
+Person(HomeUser, "Житель Дома", "Использует систему для управления устройствами и получения данных")
+
+System_Boundary(HeatingSystem, "Система Управления Smart-Home"){
+    Container(HeatingWebApp, "Веб Приложение", "React", "Интерфейс для пользователей (мобильный / десктоп)")
+    
+    Container_Boundary(Backend, "Сервер Устройств") {
+        Container(UserService, "Пользователи", "C#", "Аутентификация пользователей, управление пользователями")
+            Container(Telemetry, "Телеметрия", "C#", "Телеметрия подключаемых устройств")
+            Container(Devices, "Устройства", "C#", "Управление устройствами")
+    }
+}
+
+Container(CloudService, "Внешний сервис/API подключаемых устройств", "", "")
+        
+Rel(HomeUser, HeatingWebApp, "Управляет устройствами, Получает данные устройств", "HTTPS")
+Rel(HeatingWebApp, Monitor, "Данные устройств, авторизация с токеном JWT", "Websockets/HTTPS")
+Rel(HeatingWebApp, UserService, "Аутентификация пользователей, получение токена JWT", "HTTPS")
+Rel(HeatingWebApp, Devices, "Управление устройствами, авторизация с токеном JWT", "HTTPS, REST API")
+Rel(Telemetry, CloudService, "Получение данных от устройств")
+Rel(Devices, CloudService, "Команды на устройства")
+@enduml

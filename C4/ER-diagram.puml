@@ -1,0 +1,30 @@
+﻿@startuml
+entity "User" as User {
+  +user_id: UUID (PK)
+  --
+  +name: string
+  +last_name: string
+  +account_type: INTEGER
+}
+
+entity "Device" as Device {
+  +device_id: UUID (PK)
+  +user_id: UUID (FK)
+  --
+  +type: INTEGER
+  +serial_number: VARCHAR
+  +status: INTEGER
+}
+
+entity "TelemetryData" as TelemetryData {
+  +telemetry_id: UUID (PK)
+  +device_id: UUID (FK)
+  --
+  +data: JSON
+  +timestamp: TIMESTAMP
+}
+
+User ||--o{ Device : has
+Device ||--o{ TelemetryData : has
+
+@enduml

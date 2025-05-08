@@ -1,0 +1,23 @@
+﻿@startuml
+!include ./includes/C4_Container.puml
+!include ./includes/C4_Component.puml
+Container_Boundary(Telemetry, "Телеметрия", "Телеметрия подключаемых устройств") {
+    Component(TelemetryController, "Контроллер телеметрии", "C#", "API для получения данных от устройств")
+      Component(TelemetryManager, "Менеджер устройств", "C#", "Бизнес-логика управления устройствами")
+      Component(TelemetryRepository, "Репозиторий устройств и истории данных", "EFCore", "Доступ к данным устройств в PostgreSQL")
+      Component(ExternalDevicesClient, "Клиент внешних устройств", "HTTP Client", "Взаимодействие с внешним API устройств")
+      Component(EventsConsumer, "Потребитель событий", "Kafka Client", "Получение событий о изменениях устройств из Kafka")
+    }
+Container(DeviceBus, "Шина событий", "Kafka", "Публикация добавляемых/удаляемых устройств")
+Container(CloudService, "Внешний API устройств", "REST", "API для взаимодействия с физическими устройствами")
+ContainerDb(TelemetryDatabase, "База истории телеметрии", "Postgres", "Хранит данные по истории телеметрии")
+        
+Rel(TelemetryController, TelemetryManager, "Вызов бизнес-логики", "")
+Rel(TelemetryManager, TelemetryRepository, "Управление данными устройств/хранение телеметрии", "ORM")
+
+Rel(TelemetryManager, ExternalDevicesClient, "Отправка команд на устройства", "HTTPS")
+Rel(ExternalDevicesClient, CloudService, "Взаимодействие с API устройств", "HTTP/gRPC")
+
+Rel(TelemetryManager, EventsConsumer, "Получение событий об изменениях устройств", "Вызов клиента Kafka")
+Rel(EventsConsumer, DeviceBus, "Получение сообщений", "TCP/IP")
+@enduml

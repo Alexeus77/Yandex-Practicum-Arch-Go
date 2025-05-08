@@ -1,0 +1,27 @@
+﻿@startuml
+!include ./includes/C4_Container.puml
+!include ./includes/C4_Component.puml
+Container(HeatingWebApp, "Веб Приложение", "React", "Интерфейс для пользователей (мобильный / десктоп)")
+Container_Boundary(UserAuth, "Аутентификация", "Аутентификация пользователей") {
+        Component(UserAuthService, "Микросервис пользователей", "Go", "Микросервис аутентификации и авторизации пользователей")
+        ContainerDb(UserDatabase, "База пользователей", "Postgres", "Хранит данные пользователей")        
+    }
+Container_Boundary(Monitor, "Мониторинг") {
+    ContainerDb(MonitorDatabase, "База Данных Мониторинга", "Postgres", "Хранит данные по истории мониторинга")
+    Container(MonitorService, "Микросервис мониторинга", "Go", "Микросервис мониторинга для подключаемых устройств")
+    }
+Container_Boundary(Devices, "Устройства", "Управление устройствами") {
+    ContainerDb(DeviceDatabase, "База устройств", "Postgres", "Хранит данные по устройствам и их состоянию")
+    Container(DeviceService, "Микросервис устройств", "Go", "Микросервис управления устройствами")
+    }
+Container(DeviceBus, "Шина данных устройств", "Kafka", "Публикация добавляемых/удаляемых устройств")
+        
+Rel(HeatingWebApp, Monitor, "Потоковые данные устройств для дашборда", "Websockets")
+Rel(HeatingWebApp, Monitor, "Исторические данные устройств", "HTTPS")
+Rel(HeatingWebApp, UserAuth, "Аутентификация пользователей, токен JWT", "HTTPS")
+Rel(HeatingWebApp, DeviceService, "Команды на устройства", "HTTPS, REST API")
+Rel(HeatingWebApp, DeviceService, "Состояние устройств", "HTTPS, REST API")
+Rel(MonitorService, UserAuth, "Авторизация пользователей, токен JWT", "HTTPS, REST API")
+Rel(DeviceService, DeviceBus, "Публикация добавляемых/удаляемых устройств", "TCP/IP")
+Rel(MonitorService, DeviceBus, "Чтение добавляемых/удаляемых устройств", "TCP/IP")
+@enduml
