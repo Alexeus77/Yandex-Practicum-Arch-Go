@@ -2,26 +2,33 @@
 !include ./includes/C4_Container.puml
 !include ./includes/C4_Component.puml
 Container(HeatingWebApp, "Веб Приложение", "React", "Интерфейс для пользователей (мобильный / десктоп)")
-Container_Boundary(UserAuth, "Аутентификация", "Аутентификация пользователей") {
-        Component(UserAuthService, "Микросервис пользователей", "Go", "Микросервис аутентификации и авторизации пользователей")
+Container_Boundary(User, "Пользователи", "Управление пользователями") {
+        Component(UserService, "Микросервис пользователей", "Go", "Микросервис управления и аутентификации пользователей")
         ContainerDb(UserDatabase, "База пользователей", "Postgres", "Хранит данные пользователей")        
     }
-Container_Boundary(Monitor, "Мониторинг") {
-    ContainerDb(MonitorDatabase, "База Данных Мониторинга", "Postgres", "Хранит данные по истории мониторинга")
-    Container(MonitorService, "Микросервис мониторинга", "Go", "Микросервис мониторинга для подключаемых устройств")
+Container_Boundary(Telemetry, "Телеметрия") {
+    ContainerDb(TelemetryDatabase, "База Данных Телеметрии", "Postgres", "Хранит данные по истории телеметрии")
+    Container(TelemetryService, "Микросервис телеметрии", "Go", "Микросервис телеметрии для подключаемых устройств")
     }
 Container_Boundary(Devices, "Устройства", "Управление устройствами") {
     ContainerDb(DeviceDatabase, "База устройств", "Postgres", "Хранит данные по устройствам и их состоянию")
     Container(DeviceService, "Микросервис устройств", "Go", "Микросервис управления устройствами")
     }
 Container(DeviceBus, "Шина данных устройств", "Kafka", "Публикация добавляемых/удаляемых устройств")
-        
-Rel(HeatingWebApp, Monitor, "Потоковые данные устройств для дашборда", "Websockets")
-Rel(HeatingWebApp, Monitor, "Исторические данные устройств", "HTTPS")
-Rel(HeatingWebApp, UserAuth, "Аутентификация пользователей, токен JWT", "HTTPS")
-Rel(HeatingWebApp, DeviceService, "Команды на устройства", "HTTPS, REST API")
-Rel(HeatingWebApp, DeviceService, "Состояние устройств", "HTTPS, REST API")
-Rel(MonitorService, UserAuth, "Авторизация пользователей, токен JWT", "HTTPS, REST API")
+
+System_Ext(CloudService, "Внешний сервис датчиков температуры и реле отопления", "", "")
+
+Rel(HomeUser, HeatingWebApp, "Управляет устройствами, Получает данные устройств", "HTTPS")
+Rel(HeatingWebApp, UserService, "Аутентификация пользователей, получение токена JWT", "HTTPS")
+Rel(UserService, UserDatabase, "Получение и сохранение данных пользователей", "ORM")        
+Rel(HeatingWebApp, Telemetry, "Потоковые данные устройств для дашборда", "Websockets")
+Rel(HeatingWebApp, Telemetry, "Исторические данные устройств", "HTTPS")
+Rel(HeatingWebApp, Devices, "Команды на устройства", "HTTPS, REST API")
+Rel(HeatingWebApp, Devices, "Состояние устройств", "HTTPS, REST API")
+Rel(TelemetryService, TelemetryDatabase, "Получение и сохранение данных телеметрии", "ORM")
 Rel(DeviceService, DeviceBus, "Публикация добавляемых/удаляемых устройств", "TCP/IP")
-Rel(MonitorService, DeviceBus, "Чтение добавляемых/удаляемых устройств", "TCP/IP")
+Rel(DeviceService, DeviceDatabase, "Получение и сохранение данных устройств", "ORM")
+Rel(TelemetryService, DeviceBus, "Чтение добавляемых/удаляемых устройств", "TCP/IP")
+Rel(TelemetryService, CloudService, "Получение данных от устройств", "Async API")
+Rel(DeviceService, CloudService, "Команды на устройства, запрос состояния", "Async API")
 @enduml
