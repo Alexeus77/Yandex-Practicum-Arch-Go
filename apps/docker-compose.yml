@@ -1,14 +1,31 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: smarthome-postgres
-  ## тут нужно добавить настройки
+    healthcheck:  
+            test: ["CMD-SHELL", "pg_isready -U postgres"]  
+            interval: 10s  
+            timeout: 5s  
+            retries: 3
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./smart_home/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - smarthome-network
 
   temperature-api:
-  ## тут нужно добавить приложение
-
+    build: ./Temperature-Api
+    container_name: temperature-api
+    ports:
+      - "8081:8081"
+    networks:
+      - smarthome-network
+    
   app:
     build:
       context: ./smart_home
@@ -20,7 +37,7 @@ services:
       temperature-api:
         condition: service_started
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/smarthome
       - TEMPERATURE_API_URL=http://temperature-api:8081
     ports:
       - "8080:8080"

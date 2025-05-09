@@ -192,3 +192,5 @@ build/
 
 tmp/
 task-*
+apps/Temperature-Api/Temperature-Api/bin
+apps/Temperature-Api/Temperature-Api/obj

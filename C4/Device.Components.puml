@@ -1,0 +1,24 @@
+﻿@startuml
+!include ./includes/C4_Container.puml
+!include ./includes/C4_Component.puml
+Container_Boundary(Devices, "Устройства", "Управление устройствами") {
+    Component(DeviceController, "Контроллер устройств", "C#", "API для добавления/удаления/обновления и подачи команд на устройства")
+      Component(DeviceManager, "Менеджер устройств", "C#", "Бизнес-логика управления устройствами")
+      Component(DeviceRepository, "Репозиторий устройств", "EFCore", "Доступ к данным устройств в PostgreSQL")
+      Component(ExternalDevicesClient, "Клиент внешних устройств", "HTTP Client", "Взаимодействие с внешним API устройств")
+      Component(EventsProducer, "Продюсер событий", "Kafka Client", "Отправка событий о изменениях устройств в Kafka")
+    }
+Container(DeviceBus, "Шина событий", "Kafka", "Публикация добавляемых/удаляемых устройств")
+Container(CloudService, "Внешний API устройств", "REST", "API для взаимодействия с физическими устройствами")
+ContainerDb(DeviceDatabase, "База устройств", "Postgres", "Хранит данные по устройствам и их состоянию")
+        
+Rel(DeviceController, DeviceManager, "Вызов бизнес-логики", "")
+Rel(DeviceManager, DeviceRepository, "Управление данными устройств", "JPA/ORM запросы")
+Rel(DeviceRepository, DeviceDatabase, "Хранение и получение данных", "SQL")
+
+Rel(DeviceManager, ExternalDevicesClient, "Отправка команд на устройства", "HTTP/gRPC")
+Rel(ExternalDevicesClient, CloudService, "Взаимодействие с API устройств", "HTTP/gRPC")
+
+Rel(DeviceManager, EventsProducer, "Публикация событий об изменениях", "Вызов клиента Kafka")
+Rel(EventsProducer, DeviceBus, "Отправка сообщений", "TCP/IP")
+@enduml

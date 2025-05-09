@@ -1,0 +1,805 @@
+openapi: 3.0.0
+info:
+  title: API сервиса управления устройствами Smart Home
+  version: v1
+security:
+  - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+tags:
+  - name: Authentication
+    description: Аутентификация пользователей
+  - name: Users
+    description: Управление пользователями
+  - name: Devices
+    description: Управление устройствами
+  - name: Device Commands
+    description: Управление статусом устройств
+  - name: Telemetry
+    description: Поток данных телеметрии устройств
+
+paths:
+  /auth/login:
+    post:
+      summary: Аутентификация пользователя
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userName:
+                  type: string
+                  description: Уникальное имя пользователя для аутентификации
+                password:
+                  type: string
+                  description: Пароль пользователя
+              example:
+                userName: "evpatyk"
+                password: "securePassword"
+      responses:
+        '200':
+          description: Аутентификация успешна. Возвращает токен доступа.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: Токен доступа (например, JWT)
+              example:
+                accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJldnBhdHlrIiwibmFtZSI6IkV2cGF0aWkiLCJpYXQiOjE2NzgzNzU2NzJ9.someRandomString"
+        '401':
+          description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Invalid credentials"
+        '404':
+          description: Пользователь с таким userName не найден
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "User with userName 'evpatyk' not found"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+
+  /users:
+    post:
+      summary: Добавить нового пользователя
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userName:
+                  type: string
+                  description: Уникальное имя пользователя
+                name:
+                  type: string
+                  description: Имя пользователя
+                lastName:
+                  type: string
+                  description: Фамилия пользователя
+                type:
+                  type: integer
+                  description: Тип пользователя (например, 1 - администратор, 2 - обычный пользователь)
+              example:
+                userName: "evpatyk"
+                name: "Евпатий"
+                lastName: "Коловрат"
+                type: 2
+      responses:
+        '200':
+          description: Пользователь успешно добавлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userName:
+                    type: string
+                    description: Уникальное имя пользователя
+                  name:
+                    type: string
+                    description: Имя пользователя
+                  lastName:
+                    type: string
+                    description: Фамилия пользователя
+                  type:
+                    type: integer
+                    description: Тип пользователя
+              example:
+                userName: "evpatyk"
+                name: "Евпатий"
+                lastName: "Коловрат"
+                type: 2
+        '409':
+          description: Пользователь с таким userName уже существует
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "User with userName 'evpatyk' already exists"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+
+  /users/{userName}:
+    get:
+      summary: Получить пользователя по userName
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userName
+          required: true
+          schema:
+            type: string
+          description: Уникальное имя пользователя для поиска
+      responses:
+        '200':
+          description: Пользователь найден
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userName:
+                    type: string
+                    description: Уникальное имя пользователя
+                  name:
+                    type: string
+                    description: Имя пользователя
+                  lastName:
+                    type: string
+                    description: Фамилия пользователя
+                  type:
+                    type: integer
+                    description: Тип пользователя
+              example:
+                userName: "evpatyk"
+                name: "Евпатий"
+                lastName: "Коловрат"
+                type: 2
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "User with userName 'evpatyk' not found"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Forbidden"
+    put:
+      summary: Обновить существующего пользователя по userName
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userName
+          required: true
+          schema:
+            type: string
+          description: Уникальное имя пользователя для обновления
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Новое имя пользователя
+                lastName:
+                  type: string
+                  description: Новая фамилия пользователя
+                type:
+                  type: integer
+                  description: Новый тип пользователя
+              example:
+                name: "Евпатий"
+                lastName: "Коловратов"
+                type: 1
+      responses:
+        '200':
+          description: Пользователь успешно обновлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userName:
+                    type: string
+                    description: Уникальное имя пользователя
+                  name:
+                    type: string
+                    description: Обновленное имя пользователя
+                  lastName:
+                    type: string
+                    description: Обновленная фамилия пользователя
+                  type:
+                    type: integer
+                    description: Обновленный тип пользователя
+              example:
+                userName: "evpatyk"
+                name: "Евпатий"
+                lastName: "Коловратов"
+                type: 1
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "User with userName 'evpatyk' not found"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Forbidden"
+    delete:
+      summary: Удалить пользователя по userName
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userName
+          required: true
+          schema:
+            type: string
+          description: Уникальное имя пользователя для удаления
+      responses:
+        '204':
+          description: Пользователь успешно удален (No Content)
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "User with userName 'evpatyk' not found"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Forbidden"
+
+  
+  /devices:
+    post:
+      summary: Добавить новое устройство
+      tags:
+        - Devices
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                serial:
+                  type: string
+                  description: Серийный номер устройства (уникальный)
+                type:
+                  type: integer
+                  description: Тип устройства (например, 1 - датчик температуры, 2 - реле)
+              example:
+                serial: "ABC-123-XYZ"
+                type: 1
+      responses:
+        '201':
+          description: Устройство успешно добавлено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deviceId:
+                    type: string
+                    description: Уникальный идентификатор устройства
+                  serial:
+                    type: string
+                    description: Серийный номер устройства
+                  type:
+                    type: integer
+                    description: Тип устройства
+              example:
+                deviceId: "uuid-of-new-device"
+                serial: "ABC-123-XYZ"
+                type: 1
+        '409':
+          description: Устройство с таким серийным номером уже существует
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Device with serial 'ABC-123-XYZ' already exists"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+        '401':
+          description: Требуется авторизация (JWT токен в заголовке Authorization)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Unauthorized"
+
+  /devices/{deviceId}:
+    get:
+      summary: Получить устройство по ID
+      tags:
+        - Devices
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Уникальный идентификатор устройства
+      responses:
+        '200':
+          description: Устройство найдено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deviceId:
+                    type: string
+                    description: Уникальный идентификатор устройства
+                  serial:
+                    type: string
+                    description: Серийный номер устройства
+                  type:
+                    type: integer
+                    description: Тип устройства
+                  status:
+                    type: integer
+                    description: Текущий статус устройства
+              example:
+                deviceId: "uuid-of-a-device"
+                serial: "ABC-123-XYZ"
+                type: 1
+                status: 0
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Device with ID 'uuid-of-a-device' not found"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+        '401':
+          description: Требуется авторизация (JWT токен в заголовке Authorization)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Unauthorized"
+    delete:
+      summary: Удалить устройство по ID
+      tags:
+        - Devices
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Уникальный идентификатор устройства для удаления
+      responses:
+        '204':
+          description: Устройство успешно удалено (No Content)
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Device with ID 'uuid-of-a-device' not found"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+        '401':
+          description: Требуется авторизация (JWT токен в заголовке Authorization)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Unauthorized"
+
+  /devices/{deviceId}/status:
+    get:
+      summary: Получить статус устройства по ID
+      tags:
+        - Device Commands
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Уникальный идентификатор устройства
+      responses:
+        '200':
+          description: Статус устройства получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deviceId:
+                    type: string
+                    description: Уникальный идентификатор устройства
+                  status:
+                    type: integer
+                    description: Текущий статус устройства
+              example:
+                deviceId: "uuid-of-a-device"
+                status: 0
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Device with ID 'uuid-of-a-device' not found"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Описание ошибки
+              example:
+                message: "Internal server error"
+        '401':
+          description: Требуется авторизация (JWT токен в заголовке Authorization)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Ошибка
+    post:
+      summary: Изменить статус устройства
+      tags:
+        - Device Commands
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Уникальный идентификатор устройства для изменения статуса
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: integer
+                  description: Новый статус устройства
+              example:
+                status: 1
+      responses:
+        '200':
+          description: Статус устройства успешно изменен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deviceId:
+                    type: string
+                    description: Уникальный идентификатор устройства
+                  status:
+                    type: integer
+                    description: Текущий статус устройства
+              example:
+                deviceId: "uuid-of-a-device"
+                status: 1
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Ошибк
+              example:
+                message: "Device with ID 'uuid-of-a-device' not found"
+        '400':
+          description: Некорректный формат запроса или недопустимый статус
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Ошибк
+              example:
+                message: "Invalid request payload or status value"
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Ошибк
+              example:
+                message: "Internal server error"
+        '401':
+          description: Требуется авторизация (JWT токен в заголовке Authorization)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Ошибк
+              example:
+                message: "Unauthorized"
+    
+  /devices/{deviceId}/telemetry/stream:
+    get:
+      summary: Поток данных телеметрии устройства
+      tags:
+        - Telemetry
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Уникальный идентификатор устройства
+      responses:
+        '200':
+          description: Поток данных телеметрии (Server-Sent Events)
+          content:
+            text/event-stream:
+              schema:
+                type: string # Данные передаются как поток текстовых событий
+              example: |
+                data: {"temperature": 25.5, "humidity": 60.2}
+                \n\n
+                data: {"temperature": 25.6, "humidity": 60.1}
+                \n\n
+                event: warning
+                data: {"message": "Temperature threshold exceeded"}
+                \n\n
+        '404':
+          description: Устройство не найдено
+          # ...
+        '500':
+          description: Ошибка сервера
+          # ...
+        '401':
+          description: Требуется авторизация (JWT токен в заголовке Authorization)
+          # ...
+      security:
+        - BearerAuth: []
+
+
+                

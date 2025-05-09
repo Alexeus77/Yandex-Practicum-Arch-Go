@@ -1,0 +1,33 @@
+@startuml
+package "Пользовательский сервис" {
+  class AuthController {
+    + Login(userName, password): IActionResult<JWTToken>
+  }
+  class UsersController {
+    + Post(user: UserDTO): IActionResult
+    + Get(userName: string): IActionResult<UserDTO>
+    + Put(userName: string, user: UserUpdateDTO): IActionResult
+    + Delete(userName: string): IActionResult
+  }
+  class UsersService {
+    + CreateUser(user: User): Result<User, CreationError>
+    + GetUserByUserName(userName: string): Result<User, NotFoundError>
+    + UpdateUser(userName: string, updatedUser: User): Result<User, UpdateError>
+    + DeleteUser(userName: string): Result<bool, DeleteError>
+  }
+  class AuthService {
+      + AuthenticateUser(userName, password): Result<JWTToken, KeycloakError>
+    }
+  class UsersRepository {
+    + Add(user: User): Task<Result<User, DbError>>
+    + GetByUserName(userName: string): Task<Result<User, DbError>>
+    + Update(user: User): Task<Result<User, DbError>>
+    + Delete(userName: string): Task<Result<bool, DbError>>
+  }  
+}
+
+AuthController --|> AuthService : аутентификация и получение токена JWT
+UsersController --|> UsersService : операции CRUD пользователей
+UsersService --|> UsersRepository : сохранение и получение данных пользоваталей
+AuthService --|> UsersRepository : проверка данных пользоваталей
+@enduml

@@ -1,0 +1,29 @@
+@startuml
+!include ./includes/C4_Container.puml
+!include ./includes/C4_Component.puml
+
+Container_Boundary(UserDevice, "Устройство пользователя", "","") {
+  Container(WebApp, "Веб Приложение", "React", "Интерфейс для пользователей (десктоп)")
+  Container(MobileApp, "Мобильное Приложение", "React Native", "Интерфейс для пользователей (мобильный)")
+}
+
+Container_Boundary(Infra, "Инфраструктура", "","") {
+  Container(APIGateway, "API Gateway", "Nginx", "Точка входа для всех запросов")
+}
+
+Container_Boundary(UserService, "Сервис пользователей", "Go", "Микросервис для управления пользователеми"){
+  Component(AuthController, "Контроллер аутентификации", "C#", "Контроллер аутентификации пользователей")
+  Component(UserController, "Контроллер пользователей", "C#", "Контроллер добавления/удаления/блокировки пользователей")
+  Component(UserCredentialsRepository, "Репозиторий учетных данных", "C#", "Репозиторий доступа к учетным данным пользователей")
+}
+
+Container(IDP, "Провайдер Идентификации", "Внешний сервис", "Keycloak")
+
+Rel(WebApp, APIGateway, "Запрос аутентификации - получение токена JWT", "HTTPS")
+Rel(MobileApp, APIGateway, "Запрос аутентификации - получение токена JWT", "HTTPS")
+
+Rel(APIGateway, AuthController, "Маршрутизация запроса", "HTTP")
+Rel(AuthController, UserCredentialsRepository, "Запрос данных пользователя", "SQL")
+Rel(UserController, UserCredentialsRepository, "Управление данными пользователя", "SQL")
+Rel(AuthController, IDP, "Запрос аутентификации и получение токена", "OAuth2")
+@enduml
